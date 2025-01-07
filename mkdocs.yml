@@ -1,10 +1,24 @@
-site_name: "CBFTP Documentation"
-nav:
-  - Accueil: index.md
-  - Installation: install.md
-  - API:
-      - Usage Général: api/usage.md
-      - Endpoints: api/endpoints.md
-
+site_name: "Documentation CBFTP"
+site_description: "API REST de CBFTP - FR & EN"
+site_author: "VotreNom"
 theme:
   name: material
+nav:
+  - Accueil: index.md
+  - Introduction: introduction.md
+  - Documentation FR:
+      - Usage: usage_fr.md
+      - OpenAPI: 
+          - "Spec FR": openapi/cbftp-openapi_fr.yaml
+      - Postman:
+          - "Collection FR": postman/postman_collection_fr.json
+  - Documentation EN:
+      - Usage: usage_en.md
+      - OpenAPI: 
+          - "Spec EN": openapi/cbftp-openapi_en.yaml
+      - Postman:
+          - "Collection EN": postman/postman_collection_en.json
+
+plugins:
+  - search
+  - mkdocs_openapi_plugin

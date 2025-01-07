@@ -1,0 +1,1446 @@
+openapi: 3.0.3
+info:
+  title: CBFTP REST & UDP API
+  version: 1.3.0
+  description: >
+    # CBFTP – API REST & UDP
+    
+    Cette documentation couvre :
+    - **L’API HTTPS/JSON REST** exposée sur le port par défaut `55477`.  
+    - **L’API UDP** (en envoi unique), permettant de piloter certaines commandes basiques.
+
+    Toutes les réponses de l’API REST sont au format JSON.  
+    Les requêtes HTTPS/JSON doivent être accompagnées d’authentification HTTP Basic (username:password) encodée en Base64.  
+    **Note** : Cbftp utilise un certificat TLS auto-signé, la vérification doit donc être désactivée (option `-k` avec `curl`).  
+
+    ### Exemple d’appel REST (port 55477, mot de passe `bestpass`) :
+    ```bash
+    # List sites
+    curl -k -u :bestpass https://localhost:55477/sites
+
+    # Send a raw command
+    curl -k -u :bestpass -X POST https://localhost:55477/raw -d '{
+      "command": "site deluser me",
+      "sites": ["SITE1"]
+    }'
+
+    # Add a site (lire les données JSON depuis un fichier)
+    curl -k -u :bestpass -X POST https://localhost:55477/sites -d @newsite.json
+    ```
+
+    ---
+    ## HTTPS/JSON REST API – Rappels
+
+    - Méthodes HTTP utilisées :
+      - **GET** : Lire une ressource existante
+      - **POST** : Créer une nouvelle ressource
+      - **PATCH** : Mettre à jour une ressource existante
+      - **DELETE** : Supprimer une ressource
+
+    - **Endpoints principaux** :
+      - `/sites` (lister/ajouter) ; `/sites/{siteName}` (détails/modifier/supprimer)
+      - `/sites/{siteName}/sections` (lister/ajouter) ; `/sites/{siteName}/sections/{sectionName}` (détails/modifier/supprimer)
+      - `/raw` : Exécuter une commande brute (`POST`)
+      - `/spreadjobs` (lister/créer) ; `/spreadjobs/{jobName}` (détails/abandon)
+      - `/transferjobs` (lister/créer) ; `/transferjobs/{transferId}` (détails/abandon)
+      - `/path` : Lister ou supprimer un répertoire
+      - `/file` : Récupérer le contenu d’un fichier
+      - `/info` : Informations build, stats, configuration
+
+    ### Exemple de JSON lors de la création/modification d’un site
+    ```json
+    {
+      "name": "SITE1",
+      "addresses": [
+        "address1.com:46473",
+        "address2.com"
+      ],
+      "affils": [
+        "GROUP1",
+        "GROUP2"
+      ],
+      "allow_download": "YES",
+      "allow_upload": "NO",
+      "avg_speed": {
+        "SITE2": 20000,
+        "SITE3": 30000
+      },
+      "base_path": "/",
+      "broken_pasv": false,
+      "cepr": true,
+      "cpsv": true,
+      "disabled": false,
+      "except_source_sites": [
+        "SITE2"
+      ],
+      "except_target_sites": [
+        "SITE3"
+      ],
+      "force_binary_mode": false,
+      "leave_free_slot": true,
+      "list_command": "STAT_L",
+      "max_idle_time": 60,
+      "max_logins": 3,
+      "max_sim_down": 2,
+      "max_sim_down_complete": 0,
+      "max_sim_down_pre": 0,
+      "max_sim_down_transferjob": 0,
+      "max_sim_up": 3,
+      "password": "SecretPassword",
+      "pret": false,
+      "priority": "HIGH",
+      "list_frequency": "AUTO",
+      "proxy_name": "",
+      "proxy_type": "GLOBAL",
+      "sections": [
+        {
+          "name": "SEC1",
+          "path": "/some/path"
+        },
+        {
+          "name": "SEC2",
+          "path": "/some/other/path"
+        }
+      ],
+      "skiplist": [
+        {
+          "action": "DENY",
+          "dir": false,
+          "file": true,
+          "pattern": ".*asdf.*",
+          "regex": true,
+          "scope": "IN_RACE"
+        }
+      ],
+      "sscn": false,
+      "stay_logged_in": false,
+      "tls_mode": "AUTH_TLS",
+      "tls_transfer_policy": "PREFER_OFF",
+      "transfer_protocol": "IPV4_ONLY",
+      "transfer_source_policy": "ALLOW",
+      "transfer_target_policy": "BLOCK",
+      "user": "myusername",
+      "xdupe": true
+    }
+    ```
+    **Note** : Lorsque vous modifiez un site déjà existant (`PATCH`), vous pouvez n’inclure que les champs à mettre à jour.
+
+    ### Exemple de body pour une commande brute (endpoint `/raw`)
+    ```json
+    {
+      "command": "site deluser me",
+      "sites": [ "SITE1" ],
+      "sites_with_sections": [ "SEC1" ],
+      "sites_all": true,
+      "path": "/some/path",
+      "path_section": "SEC1",
+      "timeout": 10,
+      "async": false
+    }
+    ```
+    - `sites_all = true` exécute la commande sur **tous** les sites connus.
+    - `async = true` retourne immédiatement un ID de commande, sans attendre l’exécution finale.
+
+    ### UDP API (port 55477, unidirectionnelle)
+
+    L’API UDP n’est pas couverte par la spécification OpenAPI (pas de réponse HTTP), mais nous la documentons ici pour référence.  
+    Elle utilise le **même mot de passe** que l’API REST.  
+    Exemple (non chiffré) :  
+    ```bash
+    echo -n "bestpass raw SITE1 site deluser me" > /dev/udp/127.0.0.1/55477
+    ```
+
+    #### Commandes UDP disponibles (exemples)
+
+    - `download <srcsite> <srcpath> [srcfile]`
+    - `upload <srcpath> [srcfile] <dstsite> <dstpath>`
+    - `fxp <srcsite> <srcpath> <srcfile> <dstsite> <dstpath> [dstfile]`
+    - `race <section> <file> <sitelist> [dlonlysitelist]`
+    - `raw <sitelist> <command>`
+    - etc.
+
+    *(Voir la documentation interne CBFTP pour le détail complet.)*
+
+    ---
+
+    **Fin de la section d’introduction**  
+
+    La suite de cette documentation fournit la définition OpenAPI précise de l’API REST CBFTP.
+
+  termsOfService: https://exemple.com/terms
+  contact:
+    name: CBFTP Support
+    url: https://exemple.com/support
+    email: support@exemple.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://localhost:55477
+    description: Serveur local CBFTP (certificat auto-signé)
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: integer
+          description: Identifiant unique
+          default: 1
+        name:
+          type: string
+          description: Nom d'utilisateur
+          default: John Doe
+        email:
+          type: string
+          description: Email de l'utilisateur
+          default: john.doe@example.com
+
+    Site:
+      type: object
+      required:
+        - name
+        - addresses
+      properties:
+        name:
+          type: string
+          description: Nom unique du site
+        addresses:
+          type: array
+          items:
+            type: string
+            description: Adresse du site (host:port)
+        affils:
+          type: array
+          items:
+            type: string
+        allow_download:
+          type: string
+          enum: [YES, NO, MATCH_ONLY]
+        allow_upload:
+          type: string
+          enum: [YES, NO]
+        avg_speed:
+          type: object
+          additionalProperties:
+            type: integer
+        base_path:
+          type: string
+        broken_pasv:
+          type: boolean
+        cepr:
+          type: boolean
+        cpsv:
+          type: boolean
+        disabled:
+          type: boolean
+        except_source_sites:
+          type: array
+          items:
+            type: string
+        except_target_sites:
+          type: array
+          items:
+            type: string
+        force_binary_mode:
+          type: boolean
+        leave_free_slot:
+          type: boolean
+        list_command:
+          type: string
+          enum: [STAT_L, LIST]
+        max_idle_time:
+          type: integer
+        max_logins:
+          type: integer
+        max_sim_down:
+          type: integer
+        max_sim_down_complete:
+          type: integer
+        max_sim_down_pre:
+          type: integer
+        max_sim_down_transferjob:
+          type: integer
+        max_sim_up:
+          type: integer
+        password:
+          type: string
+        pret:
+          type: boolean
+        priority:
+          type: string
+          enum: [VERY_LOW, LOW, NORMAL, HIGH, VERY_HIGH]
+        list_frequency:
+          type: string
+          enum:
+            - VERY_LOW
+            - FIXED_LOW
+            - FIXED_AVERAGE
+            - FIXED_HIGH
+            - FIXED_VERY_HIGH
+            - AUTO
+            - DYNAMIC_LOW
+            - DYNAMIC_AVERAGE
+            - DYNAMIC_HIGH
+            - DYNAMIC_VERY_HIGH
+        proxy_name:
+          type: string
+        proxy_type:
+          type: string
+          enum: [GLOBAL, NONE, USE]
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'
+        skiplist:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkiplistRule'
+        sscn:
+          type: boolean
+        stay_logged_in:
+          type: boolean
+        tls_mode:
+          type: string
+          enum: [NONE, AUTH_TLS, IMPLICIT]
+        tls_transfer_policy:
+          type: string
+          enum: [ALWAYS_OFF, PREFER_OFF, PREFER_ON, ALWAYS_ON]
+        transfer_protocol:
+          type: string
+          enum: [IPV4_ONLY, PREFER_IPV4, IPV6_ONLY, PREFER_IPV6]
+        transfer_source_policy:
+          type: string
+          enum: [ALLOW, BLOCK]
+        transfer_target_policy:
+          type: string
+          enum: [ALLOW, BLOCK]
+        user:
+          type: string
+        xdupe:
+          type: boolean
+
+    Section:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+        hotkey:
+          type: integer
+        num_jobs:
+          type: integer
+        skiplist:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkiplistRule'
+
+    SkiplistRule:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [ALLOW, DENY, UNIQUE, SIMILAR]
+        dir:
+          type: boolean
+        file:
+          type: boolean
+        pattern:
+          type: string
+        regex:
+          type: boolean
+        scope:
+          type: string
+          enum: [IN_RACE, ALL]
+
+    SpreadJob:
+      type: object
+      required:
+        - section
+        - name
+        - sites
+        - profile
+      properties:
+        section:
+          type: string
+        name:
+          type: string
+        sites:
+          type: array
+          items:
+            type: string
+        sites_dlonly:
+          type: array
+          items:
+            type: string
+        sites_all:
+          type: boolean
+        reset:
+          type: boolean
+        profile:
+          type: string
+          enum: [RACE, DISTRIBUTE, PREPARE]
+
+    TransferJob:
+      type: object
+      required:
+        - src_site
+      properties:
+        src_site:
+          type: string
+        src_section:
+          type: string
+        src_path:
+          type: string
+        dst_site:
+          type: string
+        dst_section:
+          type: string
+        dst_path:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED]
+
+    RawCommandRequest:
+      type: object
+      properties:
+        command:
+          type: string
+        sites:
+          type: array
+          items:
+            type: string
+        sites_with_sections:
+          type: array
+          items:
+            type: string
+        sites_all:
+          type: boolean
+        path:
+          type: string
+        path_section:
+          type: string
+        timeout:
+          type: integer
+        async:
+          type: boolean
+
+    RawCommandResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: string
+
+    InfoResponse:
+      type: object
+      properties:
+        build_version:
+          type: string
+        uptime:
+          type: integer
+        active_jobs:
+          type: integer
+        total_sites:
+          type: integer
+        some_other_stats:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error_code:
+          type: integer
+        message:
+          type: string
+        details:
+          type: string
+
+security:
+  - BasicAuth: []
+
+paths:
+  ########################################################################
+  # SITES
+  ########################################################################
+  /sites:
+    get:
+      summary: Lister tous les sites
+      description: Retourne tous les sites configurés, avec option de filtrer par section.
+      parameters:
+        - name: section
+          in: query
+          description: Filtrer par section
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des sites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Site'
+        '401':
+          description: Utilisateur non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    post:
+      summary: Ajouter un nouveau site
+      description: Crée un nouveau site et le configure.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Site'
+            example:
+              name: SITE1
+              addresses:
+                - address1.com:46473
+                - address2.com
+              affils:
+                - GROUP1
+              allow_download: YES
+              allow_upload: NO
+      responses:
+        '201':
+          description: Site créé avec succès
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+
+  /sites/{siteName}:
+    get:
+      summary: Récupérer les informations d’un site
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Détails du site
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    patch:
+      summary: Mettre à jour un site
+      description: Met à jour les attributs spécifiés du site.
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site à modifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Site'
+            example:
+              allow_download: MATCH_ONLY
+              max_idle_time: 120
+      responses:
+        '200':
+          description: Site mis à jour
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    delete:
+      summary: Supprimer un site
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site à supprimer
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Site supprimé
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+
+  ########################################################################
+  # SITES -> SECTIONS
+  ########################################################################
+  /sites/{siteName}/sections:
+    get:
+      summary: Lister les sections d’un site
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des sections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Section'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    post:
+      summary: Ajouter une section à un site
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Section'
+            example:
+              name: TESTSEC1
+              path: /some/path
+              hotkey: 7
+      responses:
+        '201':
+          description: Section créée
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+
+  /sites/{siteName}/sections/{sectionName}:
+    get:
+      summary: Obtenir les détails d’une section
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+        - name: sectionName
+          in: path
+          required: true
+          description: Nom de la section
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Détails de la section
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site ou section introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    patch:
+      summary: Modifier une section
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+        - name: sectionName
+          in: path
+          required: true
+          description: Nom de la section
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Section'
+            example:
+              path: /some/updated/path
+      responses:
+        '200':
+          description: Section mise à jour
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site ou section introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    delete:
+      summary: Supprimer une section
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+        - name: sectionName
+          in: path
+          required: true
+          description: Nom de la section
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Section supprimée
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site ou section introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+
+  ########################################################################
+  # SPREADJOBS
+  ########################################################################
+  /spreadjobs:
+    get:
+      summary: Lister tous les jobs de type spread
+      description: Retourne tous les jobs avec des options de filtrage (statut, section...).
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filtrer par statut (RUNNING, COMPLETED, FAILED)
+        - name: section
+          in: query
+          schema:
+            type: string
+          description: Filtrer par section
+        - name: profile
+          in: query
+          schema:
+            type: string
+          description: Filtrer par profil (RACE, DISTRIBUTE, PREPARE)
+        - name: site
+          in: query
+          schema:
+            type: string
+          description: Filtrer par site
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Filtrer par nom de job
+      responses:
+        '200':
+          description: Liste des spread jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpreadJob'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    post:
+      summary: Créer un nouveau spread job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpreadJob'
+            example:
+              section: LINUX_ISOS
+              name: LATEST_DISTRO_1.0-NEW
+              sites:
+                - SITE1
+                - SITE2
+              sites_dlonly:
+                - SITE1
+              sites_all: false
+              reset: true
+              profile: DISTRIBUTE
+      responses:
+        '201':
+          description: Job créé
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Ressource introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+
+  /spreadjobs/{jobName}:
+    get:
+      summary: Obtenir les infos d’un job
+      parameters:
+        - name: jobName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Détails du job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpreadJob'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Job introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    post:
+      summary: Actions sur un job existant (abort, reset...)
+      parameters:
+        - name: jobName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Action à effectuer (abort, reset, etc.)
+      responses:
+        '200':
+          description: Action exécutée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Job aborted successfully"
+        '400':
+          description: Requête invalide
+        '401':
+          description: Non authentifié
+        '404':
+          description: Job introuvable
+        '500':
+          description: Erreur interne
+      security:
+        - BasicAuth: []
+
+  ########################################################################
+  # TRANSFERJOBS
+  ########################################################################
+  /transferjobs:
+    get:
+      summary: Lister les transferts
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filtrer par statut (PENDING, RUNNING, COMPLETED, FAILED)
+        - name: src_site
+          in: query
+          schema:
+            type: string
+        - name: dst_site
+          in: query
+          schema:
+            type: string
+        - name: site
+          in: query
+          schema:
+            type: string
+          description: Filtrer par site (source ou destination)
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Filtrer par nom de job
+      responses:
+        '200':
+          description: Liste des transferts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransferJob'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    post:
+      summary: Créer un nouveau transfert
+      description: Lance un nouveau transfert (FXP, UPLOAD, DOWNLOAD).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferJob'
+            examples:
+              fxpExample:
+                summary: Exemple transfert FXP
+                value:
+                  src_site: SITE1
+                  src_section: SECTION1
+                  dst_site: SITE2
+                  dst_path: /MISC
+                  name: LATEST_DISTRO_1.0-NEW
+              downloadExample:
+                summary: Exemple téléchargement
+                value:
+                  src_site: SITE1
+                  src_section: SECTION1
+                  name: LATEST_DISTRO_1.0-NEW
+                  dst_path: /linux-isos
+              uploadExample:
+                summary: Exemple upload
+                value:
+                  dst_site: SITE1
+                  dst_path: /linux-isos
+                  name: LATEST_DISTRO_1.0-NEW
+                  src_path: /home/localuser/linux-isos
+      responses:
+        '201':
+          description: Transfert créé
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+
+  /transferjobs/{transferId}:
+    get:
+      summary: Détails d’un transfert
+      parameters:
+        - name: transferId
+          in: path
+          required: true
+          description: Nom ou ID du transfert
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Utiliser "true" pour chercher via ID
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Détails du transfert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferJob'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transfert introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BasicAuth: []
+    post:
+      summary: Actions sur un transfert existant (abort, reset...)
+      parameters:
+        - name: transferId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Action (abort, reset)
+        - name: id
+          in: query
+          schema:
+            type: boolean
+          description: \"true\" pour identifier le transfert via ID
+      responses:
+        '200':
+          description: Action exécutée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Transfer aborted successfully"
+        '400':
+          description: Requête invalide
+        '401':
+          description: Non authentifié
+        '404':
+          description: Transfert introuvable
+        '500':
+          description: Erreur interne
+      security:
+        - BasicAuth: []
+
+  ########################################################################
+  # PATH
+  ########################################################################
+  /path:
+    get:
+      summary: Lister un répertoire
+      parameters:
+        - name: site
+          in: query
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+        - name: path
+          in: query
+          required: true
+          description: Chemin ou nom de section
+          schema:
+            type: string
+        - name: timeout
+          in: query
+          schema:
+            type: integer
+          description: "Temps d attente max (défaut: 60)"
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filtre d’objet à lister (ALL, OWN...)
+      responses:
+        '200':
+          description: Contenu du répertoire
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Requête invalide
+        '401':
+          description: Non authentifié
+        '404':
+          description: Répertoire introuvable
+        '500':
+          description: Erreur interne
+      security:
+        - BasicAuth: []
+    delete:
+      summary: Supprimer un répertoire
+      parameters:
+        - name: site
+          in: query
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+        - name: path
+          in: query
+          required: true
+          description: Chemin ou section
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: "Type d’effacement (ALL, OWN), défaut: ALL"
+      responses:
+        '204':
+          description: Répertoire supprimé
+        '400':
+          description: Requête invalide
+        '401':
+          description: Non authentifié
+        '404':
+          description: Répertoire introuvable
+        '500':
+          description: Erreur interne
+      security:
+        - BasicAuth: []
+
+  ########################################################################
+  # FILE
+  ########################################################################
+  /file:
+    get:
+      summary: Afficher un fichier
+      parameters:
+        - name: site
+          in: query
+          required: true
+          description: Nom du site
+          schema:
+            type: string
+        - name: path
+          in: query
+          required: true
+          description: Chemin (ou section)
+          schema:
+            type: string
+        - name: timeout
+          in: query
+          schema:
+            type: integer
+          description: "Temps d’attente max, défaut: 60"
+      responses:
+        '200':
+          description: Contenu du fichier
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Requête invalide
+        '401':
+          description: Non authentifié
+        '404':
+          description: Fichier introuvable
+        '413':
+          description: Fichier trop volumineux (> 500k)
+        '500':
+          description: Erreur interne
+      security:
+        - BasicAuth: []
+
+  ########################################################################
+  # RAW
+  ########################################################################
+  /raw:
+    post:
+      summary: Envoyer une commande brute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RawCommandRequest'
+            example:
+              command: site deluser me
+              sites:
+                - SITE1
+              sites_with_sections:
+                - SEC1
+              sites_all: false
+              path: /some/path
+              path_section: SEC1
+              timeout: 10
+              async: false
+      responses:
+        '200':
+          description: Résultat de la commande ou ID async
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RawCommandResponse'
+        '400':
+          description: Requête invalide
+        '401':
+          description: Non authentifié
+        '500':
+          description: Erreur interne
+      security:
+        - BasicAuth: []
+
+  ########################################################################
+  # INFO
+  ########################################################################
+  /info:
+    get:
+      summary: Informations générales sur CBFTP
+      responses:
+        '200':
+          description: Informations du build / stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        '401':
+          description: Non authentifié
+        '500':
+          description: Erreur interne
+      security:
+        - BasicAuth: []

@@ -1,0 +1,29 @@
+name: Validate OpenAPI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  openapi-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install swagger-cli
+        run: npm install -g swagger-cli
+
+      - name: Validate cbftp-openapi_fr.yaml
+        run: swagger-cli validate cbftp-openapi_fr.yaml
+
+      - name: Validate cbftp-openapi_en.yaml
+        run: swagger-cli validate cbftp-openapi_en.yaml

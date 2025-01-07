@@ -2,41 +2,33 @@ name: Documentation
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   build-and-deploy-docs:
     runs-on: ubuntu-latest
 
     steps:
-      # Étape 1 : Récupérer le code du dépôt
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Étape 2 : Installer Python (pour mkdocs)
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 
-      # Étape 3 : Installer mkdocs et le thème (ex. mkdocs-material)
-      - name: Install mkdocs
+      - name: Install mkdocs and plugins
         run: |
           pip install mkdocs
           pip install mkdocs-material
-          # Si vous utilisez d'autres plugins, installez-les ici
-          # ex: pip install mkdocs-openapi-plugin mkdocs-git-revision-date-localized-plugin
+          pip install mkdocs-openapi-plugin
 
-      # Étape 4 : Construire la documentation en local pour vérifier
       - name: Build docs
         run: mkdocs build --verbose
 
-      # Étape 5 : Déployer sur la branche gh-pages
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force
         env:
-          # Le GITHUB_TOKEN est fourni automatiquement par GitHub Actions
-          # Cf. https://docs.github.com/en/actions/security-guides/automatic-token-authentication
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

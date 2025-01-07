@@ -1,0 +1,10 @@
+site_name: "CBFTP Documentation"
+nav:
+  - Accueil: index.md
+  - Installation: install.md
+  - API:
+      - Usage Général: api/usage.md
+      - Endpoints: api/endpoints.md
+
+theme:
+  name: material

@@ -1,0 +1,777 @@
+{
+  "info": {
+    "name": "CBFTP Full API v1.3.0",
+    "_postman_id": "cbftp-full-collection-1234-abcd",
+    "description": "Collection Postman pour tester toutes les routes de l'API REST CBFTP.",
+    "version": "1.3.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Sites",
+      "item": [
+        {
+          "name": "GET /sites (Lister tous les sites)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/sites",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites"
+              ]
+            },
+            "description": "Retourne tous les sites configurés. Paramètre optionnel: ?section=xxx"
+          }
+        },
+        {
+          "name": "POST /sites (Ajouter un nouveau site)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SITE1\",\n  \"addresses\": [\"address1.com:46473\", \"address2.com\"],\n  \"affils\": [\"GROUP1\"],\n  \"allow_download\": \"YES\",\n  \"allow_upload\": \"NO\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:55477/sites",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites"
+              ]
+            },
+            "description": "Crée un nouveau site. Vous pouvez ajuster le body JSON selon vos besoins."
+          }
+        },
+        {
+          "name": "GET /sites/{siteName} (Détails d'un site)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1"
+              ]
+            },
+            "description": "Récupère les infos d'un site précis. Remplacez SITE1 par le nom réel."
+          }
+        },
+        {
+          "name": "PATCH /sites/{siteName} (Mettre à jour un site)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"allow_download\": \"MATCH_ONLY\",\n  \"max_idle_time\": 120\n}"
+            },
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1"
+              ]
+            },
+            "description": "Met à jour seulement les champs spécifiés. Remplacez SITE1 par le nom du site."
+          }
+        },
+        {
+          "name": "DELETE /sites/{siteName} (Supprimer un site)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1"
+              ]
+            },
+            "description": "Supprime un site. Remplacez SITE1 par le nom du site à supprimer."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sites -> Sections",
+      "item": [
+        {
+          "name": "GET /sites/{siteName}/sections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1/sections",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1",
+                "sections"
+              ]
+            },
+            "description": "Lister les sections d’un site (SITE1)."
+          }
+        },
+        {
+          "name": "POST /sites/{siteName}/sections",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"TESTSEC1\",\n  \"path\": \"/some/path\",\n  \"hotkey\": 7\n}"
+            },
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1/sections",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1",
+                "sections"
+              ]
+            },
+            "description": "Ajoute une nouvelle section à un site existant."
+          }
+        },
+        {
+          "name": "GET /sites/{siteName}/sections/{sectionName}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1/sections/SEC1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1",
+                "sections",
+                "SEC1"
+              ]
+            },
+            "description": "Récupère les détails d'une section précise sur un site."
+          }
+        },
+        {
+          "name": "PATCH /sites/{siteName}/sections/{sectionName}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"path\": \"/some/updated/path\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1/sections/SEC1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1",
+                "sections",
+                "SEC1"
+              ]
+            },
+            "description": "Modifie une section existante."
+          }
+        },
+        {
+          "name": "DELETE /sites/{siteName}/sections/{sectionName}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/sites/SITE1/sections/SEC1",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "sites",
+                "SITE1",
+                "sections",
+                "SEC1"
+              ]
+            },
+            "description": "Supprime une section d’un site."
+          }
+        }
+      ]
+    },
+    {
+      "name": "SpreadJobs",
+      "item": [
+        {
+          "name": "GET /spreadjobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/spreadjobs",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "spreadjobs"
+              ]
+            },
+            "description": "Lister tous les jobs de type spread (avec filtres facultatifs)."
+          }
+        },
+        {
+          "name": "POST /spreadjobs (Créer un spread job)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"section\": \"LINUX_ISOS\",\n  \"name\": \"LATEST_DISTRO_1.0-NEW\",\n  \"sites\": [\"SITE1\", \"SITE2\"],\n  \"sites_dlonly\": [\"SITE1\"],\n  \"sites_all\": false,\n  \"reset\": true,\n  \"profile\": \"DISTRIBUTE\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:55477/spreadjobs",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "spreadjobs"
+              ]
+            },
+            "description": "Lance un nouveau job de spread."
+          }
+        },
+        {
+          "name": "GET /spreadjobs/{jobName}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/spreadjobs/JOB123",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "spreadjobs",
+                "JOB123"
+              ]
+            },
+            "description": "Obtenir les infos détaillées d'un job existant. Remplacez JOB123."
+          }
+        },
+        {
+          "name": "POST /spreadjobs/{jobName}?action=abort/reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/spreadjobs/JOB123?action=abort",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "spreadjobs",
+                "JOB123"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "abort"
+                }
+              ]
+            },
+            "description": "Permet d'abandonner ou de reset un job (modifier la query param 'action')."
+          }
+        }
+      ]
+    },
+    {
+      "name": "TransferJobs",
+      "item": [
+        {
+          "name": "GET /transferjobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/transferjobs",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "transferjobs"
+              ]
+            },
+            "description": "Lister tous les transferts (avec filtres possibles)."
+          }
+        },
+        {
+          "name": "POST /transferjobs (Créer un nouveau transfert)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"src_site\": \"SITE1\",\n  \"src_section\": \"SECTION1\",\n  \"dst_site\": \"SITE2\",\n  \"dst_path\": \"/MISC\",\n  \"name\": \"LATEST_DISTRO_1.0-NEW\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:55477/transferjobs",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "transferjobs"
+              ]
+            },
+            "description": "Crée un transfert (FXP, UPLOAD, DOWNLOAD) selon le body fourni."
+          }
+        },
+        {
+          "name": "GET /transferjobs/{transferId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/transferjobs/TRANSFER123",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "transferjobs",
+                "TRANSFER123"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Détails d’un transfert (par nom par défaut, param ?id=true pour chercher par ID)."
+          }
+        },
+        {
+          "name": "POST /transferjobs/{transferId}?action=abort/reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/transferjobs/TRANSFER123?action=abort&id=false",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "transferjobs",
+                "TRANSFER123"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "abort"
+                },
+                {
+                  "key": "id",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Abandonne ou reset un transfert (modifier la query param 'action', 'id')."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Path (Lister/Supprimer un répertoire)",
+      "item": [
+        {
+          "name": "GET /path",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/path?site=SITE1&path=/&timeout=60",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "path"
+              ],
+              "query": [
+                {
+                  "key": "site",
+                  "value": "SITE1"
+                },
+                {
+                  "key": "path",
+                  "value": "/"
+                },
+                {
+                  "key": "timeout",
+                  "value": "60"
+                }
+              ]
+            },
+            "description": "Liste le contenu d’un répertoire (ou section)."
+          }
+        },
+        {
+          "name": "DELETE /path",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/path?site=SITE1&path=/unwanted&timeout=60&type=ALL",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "path"
+              ],
+              "query": [
+                {
+                  "key": "site",
+                  "value": "SITE1"
+                },
+                {
+                  "key": "path",
+                  "value": "/unwanted"
+                },
+                {
+                  "key": "timeout",
+                  "value": "60"
+                },
+                {
+                  "key": "type",
+                  "value": "ALL"
+                }
+              ]
+            },
+            "description": "Supprime un répertoire (ou section). Par défaut, type=ALL."
+          }
+        }
+      ]
+    },
+    {
+      "name": "File (Afficher un fichier)",
+      "item": [
+        {
+          "name": "GET /file",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/file?site=SITE1&path=/some/file.nfo&timeout=60",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "file"
+              ],
+              "query": [
+                {
+                  "key": "site",
+                  "value": "SITE1"
+                },
+                {
+                  "key": "path",
+                  "value": "/some/file.nfo"
+                },
+                {
+                  "key": "timeout",
+                  "value": "60"
+                }
+              ]
+            },
+            "description": "Récupérer le contenu brut d’un fichier (limité à 500k)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Raw (Envoyer une commande brute)",
+      "item": [
+        {
+          "name": "POST /raw",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"command\": \"site deluser me\",\n  \"sites\": [\"SITE1\"],\n  \"sites_with_sections\": [\"SEC1\"],\n  \"sites_all\": false,\n  \"path\": \"/some/path\",\n  \"path_section\": \"SEC1\",\n  \"timeout\": 10,\n  \"async\": false\n}"
+            },
+            "url": {
+              "raw": "https://localhost:55477/raw",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "raw"
+              ]
+            },
+            "description": "Exécuter une commande brute (site deluser me...)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Info (Informations générales)",
+      "item": [
+        {
+          "name": "GET /info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic OmJlc3RwYXNz",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://localhost:55477/info",
+              "protocol": "https",
+              "host": [
+                "localhost"
+              ],
+              "port": "55477",
+              "path": [
+                "info"
+              ]
+            },
+            "description": "Afficher diverses informations sur CBFTP (build_version, uptime...)."
+          }
+        }
+      ]
+    }
+  ]
+}
